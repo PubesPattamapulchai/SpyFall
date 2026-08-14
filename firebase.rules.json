@@ -1,0 +1,69 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rooms": {
+      "$room": {
+        "hostUid": {
+          ".read": "auth != null",
+          ".write": "auth != null && ((!data.exists() && newData.val() == auth.uid) || data.val() == auth.uid)"
+        },
+        "public": {
+          ".read": "auth != null && root.child('rooms').child($room).child('hostUid').exists()",
+          ".write": "auth != null && root.child('rooms').child($room).child('hostUid').val() == auth.uid"
+        },
+        "players": {
+          ".read": "auth != null && root.child('rooms').child($room).child('hostUid').exists()",
+          "$uid": {
+            "name": {
+              ".write": "auth != null && (auth.uid == $uid || root.child('rooms').child($room).child('hostUid').val() == auth.uid)",
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24"
+            },
+            "connected": {
+              ".write": "auth != null && (auth.uid == $uid || root.child('rooms').child($room).child('hostUid').val() == auth.uid)",
+              ".validate": "newData.isBoolean()"
+            },
+            "joinedAt": {
+              ".write": "auth != null && (root.child('rooms').child($room).child('hostUid').val() == auth.uid || (auth.uid == $uid && !data.exists()))"
+            },
+            "assigned": {
+              ".write": "auth != null && root.child('rooms').child($room).child('hostUid').val() == auth.uid"
+            },
+            "isHost": {
+              ".write": "auth != null && root.child('rooms').child($room).child('hostUid').val() == auth.uid"
+            }
+          }
+        },
+        "private": {
+          "$uid": {
+            ".read": "auth != null && auth.uid == $uid",
+            ".write": "auth != null && root.child('rooms').child($room).child('hostUid').val() == auth.uid",
+            "voteLocks": {
+              "$accusationId": {
+                ".write": "auth != null && auth.uid == $uid && !data.exists() && newData.val() == true && root.child('rooms').child($room).child('public').child('gameType').val() == 'spyfall' && root.child('rooms').child($room).child('public').child('state').val() == 'accusation' && root.child('rooms').child($room).child('public').child('accusationId').val() == $accusationId"
+              }
+            }
+          }
+        },
+        "hostSecret": {
+          ".read": "auth != null && root.child('rooms').child($room).child('hostUid').val() == auth.uid",
+          ".write": "auth != null && root.child('rooms').child($room).child('hostUid').val() == auth.uid"
+        },
+        "spyVotes": {
+          ".write": "auth != null && root.child('rooms').child($room).child('hostUid').val() == auth.uid",
+          "$accusationId": {
+            ".read": "auth != null && root.child('rooms').child($room).child('hostUid').val() == auth.uid",
+            "$uid": {
+              ".read": "auth != null && auth.uid == $uid",
+              ".write": "auth != null && auth.uid == $uid && !data.exists() && root.child('rooms').child($room).child('public').child('gameType').val() == 'spyfall' && root.child('rooms').child($room).child('public').child('state').val() == 'accusation' && root.child('rooms').child($room).child('public').child('accusationId').val() == $accusationId && root.child('rooms').child($room).child('public').child('suspectUid').val() != $uid && (newData.child('choice').val() == 'yes' || newData.child('choice').val() == 'no')"
+            }
+          }
+        },
+        "spyGuess": {
+          ".read": "auth != null && root.child('rooms').child($room).child('hostUid').val() == auth.uid",
+          ".write": "auth != null && ((root.child('rooms').child($room).child('hostUid').val() == auth.uid && !newData.exists()) || (!data.exists() && newData.exists() && newData.child('uid').val() == auth.uid && root.child('rooms').child($room).child('public').child('gameType').val() == 'spyfall' && root.child('rooms').child($room).child('public').child('state').val() == 'playing' && root.child('rooms').child($room).child('private').child(auth.uid).child('isSpy').val() == true && newData.child('roundId').val() == root.child('rooms').child($room).child('public').child('roundId').val() && newData.child('location').isString()))"
+        }
+      }
+    }
+  }
+}

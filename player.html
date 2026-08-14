@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Spyfall Player</title>
+  <link rel="stylesheet" href="./theme.css">
+</head>
+<body>
+<main class="wrap">
+  <header class="brand">
+    <div class="logo">🕵️</div>
+    <div><h1>Spyfall Player</h1><p>เข้าห้อง ดูการ์ดลับ โหวต และเดาสถานที่บนมือถือ</p></div>
+  </header>
+  <div class="grid">
+    <section class="panel stack">
+      <div id="joinView" class="stack">
+        <h2>เข้าห้อง</h2>
+        <input id="roomInput" class="input" maxlength="6" placeholder="Room Code">
+        <input id="nameInput" class="input" maxlength="24" placeholder="ชื่อของคุณ">
+        <button id="joinBtn" class="btn primary">เข้าห้อง</button>
+        <span id="connection" class="pill">กำลังเชื่อมต่อ…</span>
+      </div>
+
+      <div id="gameView" class="hidden stack">
+        <div class="row"><span class="pill">ห้อง <b id="roomText"></b></span><span class="pill">คุณ: <b id="meText"></b></span></div>
+        <div id="waiting" class="status">รอ Host เริ่มรอบ</div>
+
+        <div id="secretArea" class="hidden stack">
+          <button id="revealBtn" class="btn">🔒 แตะเพื่อดูการ์ดลับ</button>
+          <div id="secretCard" class="secret-card hidden"></div>
+        </div>
+
+        <div id="timerBox" class="hidden"><div class="muted">เวลาที่เหลือ</div><div id="timer" class="timer">08:00</div></div>
+
+        <div id="suspectStatus" class="hidden status"></div>
+
+        <div id="voteBox" class="hidden stack">
+          <h3 id="voteQuestion">ยืนยันผู้ต้องสงสัย?</h3>
+          <div class="vote-options"><button id="yesBtn" class="btn danger">ใช่ เป็น Spy</button><button id="noBtn" class="btn safe">ไม่ใช่</button></div>
+          <button id="submitVoteBtn" class="btn primary" disabled>ล็อกคะแนน</button>
+          <div id="voteStatus" class="status"></div>
+        </div>
+
+        <div id="spyGuessBox" class="hidden stack">
+          <h3>คุณเป็น Spy — เดาสถานที่</h3>
+          <div class="muted">เลือกสถานที่ที่คิดว่าถูกต้องเพื่อชิงชัยชนะ คุณมีโอกาสเดาเพียงครั้งเดียวต่อรอบ</div>
+          <div id="locationGrid" class="location-grid"></div>
+          <button id="submitGuessBtn" class="btn danger" disabled>ยืนยันคำตอบ</button>
+        </div>
+
+        <div id="resultBox" class="hidden"><div id="resultText" class="result"></div></div>
+      </div>
+    </section>
+
+    <aside class="panel stack">
+      <h3>ผู้เล่นในห้อง</h3>
+      <div id="playerList" class="players"></div>
+      <div class="status">ถามให้เฉพาะเจาะจงพอจับพิรุธ แต่ไม่ชัดจน Spy เดาสถานที่ได้ง่าย</div>
+    </aside>
+  </div>
+</main>
+<script type="module" src="./player.js"></script>
+</body>
+</html>

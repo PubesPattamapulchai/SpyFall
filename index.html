@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Spyfall Host</title>
+  <link rel="stylesheet" href="./theme.css">
+</head>
+<body>
+<main class="wrap">
+  <header class="brand">
+    <div class="logo">🕵️</div>
+    <div><h1>Spyfall Connected</h1><p>Host + Player Companion • ห้องเดียว หลายเครื่อง</p></div>
+  </header>
+  <div class="grid">
+    <section class="panel stack">
+      <div id="createView" class="stack">
+        <h2>สร้างห้อง</h2>
+        <div class="muted">Host เล่นด้วยได้ ระบบจะสุ่ม Spy 1 คน และแจกสถานที่/อาชีพแบบลับ</div>
+        <input id="hostName" class="input" maxlength="24" placeholder="ชื่อของคุณ">
+        <label class="muted">เวลาเล่นต่อรอบ</label>
+        <select id="duration">
+          <option value="360">6 นาที</option>
+          <option value="480" selected>8 นาที</option>
+          <option value="600">10 นาที</option>
+          <option value="720">12 นาที</option>
+        </select>
+        <button id="createBtn" class="btn primary">สร้างห้อง</button>
+      </div>
+
+      <div id="roomView" class="hidden stack">
+        <div><div class="muted">Room Code</div><div id="roomCode" class="room-code">------</div></div>
+        <div class="row">
+          <button id="copyBtn" class="btn">คัดลอกลิงก์ผู้เล่น</button>
+          <span id="connection" class="pill">กำลังเชื่อมต่อ…</span>
+        </div>
+
+        <div id="hostSecret" class="hidden stack">
+          <button id="revealBtn" class="btn">🔒 แตะเพื่อดูการ์ดของฉัน</button>
+          <div id="secretCard" class="secret-card hidden"></div>
+        </div>
+
+        <div id="roundControls" class="stack">
+          <button id="startBtn" class="btn primary" disabled>เริ่มรอบ</button>
+
+          <div id="timerBox" class="hidden stack">
+            <div class="muted">เวลาที่เหลือ</div>
+            <div id="timer" class="timer">08:00</div>
+            <div class="row">
+              <button id="accuseBtn" class="btn danger">กล่าวหา Spy</button>
+              <button id="endBtn" class="btn">จบรอบโดย Host</button>
+            </div>
+          </div>
+
+          <div id="accuseBox" class="hidden stack">
+            <h3>กล่าวหาใครว่าเป็น Spy?</h3>
+            <select id="suspectSelect"></select>
+            <button id="openVoteBtn" class="btn danger">เปิดโหวตยืนยัน</button>
+          </div>
+
+          <div id="voteBox" class="hidden stack">
+            <div id="voteProgress" class="status"></div>
+            <div class="muted">ทุกคนยกเว้นผู้ถูกกล่าวหาจะโหวต ใช่ / ไม่ใช่ แบบลับ ต้องเป็นเอกฉันท์จึงจะจับได้</div>
+            <button id="closeVoteBtn" class="btn primary">ปิดโหวตและเปิดผล</button>
+          </div>
+
+          <div id="resultBox" class="hidden stack">
+            <div id="resultText" class="result"></div>
+            <button id="nextBtn" class="btn primary">เริ่มรอบใหม่</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel stack">
+      <h3>ผู้เล่น</h3>
+      <div id="playerCount" class="muted">0 คน</div>
+      <div id="playerList" class="players"><div class="muted">ยังไม่มีผู้เล่น</div></div>
+      <div class="status">ผู้เล่นทั่วไปเห็นสถานที่เดียวกันและบทบาทย่อยของตัวเอง ส่วน Spy ไม่รู้สถานที่ ทุกคนถาม-ตอบเพื่อจับ Spy ก่อนหมดเวลา</div>
+    </aside>
+  </div>
+  <div class="footer">Spyfall-style social deduction companion • Firebase Realtime Database</div>
+</main>
+<script type="module" src="./host.js"></script>
+</body>
+</html>
