@@ -55,6 +55,17 @@
 
 ถ้าต้องการแยก Firebase project ใหม่ ให้สร้าง Web App + Realtime Database แล้วแก้ค่าใน `firebase-config.js`
 
+
+## ถ้ากด “เริ่มรอบ” แล้วไม่เกิดอะไรขึ้น
+
+สาเหตุเกือบทั้งหมดคือ Authentication ใช้งานได้ แต่ **Realtime Database Rules ยังเป็นของเกมเดิม** ทำให้หน้าเว็บขึ้น `Firebase พร้อม` แต่การแจก Role ถูก Firebase ปฏิเสธ
+
+เวอร์ชัน 1.1 จะตรวจสิทธิ์ก่อนเริ่มรอบ และแจ้ง `Firebase Rules ยังไม่พร้อม` พร้อมวิธีแก้แทนการเงียบ
+
+ให้เปิด Firebase Console → **Realtime Database → Rules** → วาง `firebase.rules.json` จากแพ็กเกจนี้ → **Publish** แล้ว Refresh หน้า Host
+
+> ถ้า Firebase Project เดียวกันยังใช้ WereWolf/Insider อยู่ อย่า Publish Rules standalone นี้ทับ ให้สร้าง Firebase Project แยกสำหรับ Spyfall หรือ merge rules ก่อน
+
 ## GitHub Pages
 
 1. สร้าง Repo ใหม่ เช่น `Spyfall-Board-Game`

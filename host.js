@@ -13,6 +13,45 @@ const entries = () => Object.entries(players).sort((a,b) => (a[1].joinedAt || 0)
 function setConnection(text) { $('connection').textContent = text; }
 function fmt(ms) { const s = Math.max(0, Math.ceil(ms / 1000)); return `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`; }
 
+function isPermissionError(error) {
+  const text = `${error?.code || ''} ${error?.message || ''}`.toLowerCase();
+  return text.includes('permission') || text.includes('denied');
+}
+
+function showFirebaseWriteError(error, action = 'ทำรายการ') {
+  console.error(error);
+  if (isPermissionError(error)) {
+    setConnection('Firebase Rules ยังไม่พร้อม');
+    alert(`${action}ไม่สำเร็จ เพราะ Firebase Realtime Database Rules ไม่อนุญาต\n\nวิธีแก้:\n1. เปิด Firebase Console\n2. Realtime Database → Rules\n3. นำไฟล์ firebase.rules.json จาก ZIP นี้ไปวาง\n4. กด Publish\n5. Refresh หน้า Host แล้วลองใหม่`);
+    return;
+  }
+  alert(`${action}ไม่สำเร็จ: ${error?.message || error}`);
+}
+
+async function verifySpyfallRules() {
+  if (!room) return false;
+  try {
+    // hostSecret is intentionally Host-only. A read here is a cheap pre-flight
+    // that distinguishes "Auth works" from "Spyfall database rules are published".
+    await get(ref(db, path('hostSecret')));
+    setConnection('Firebase + Rules พร้อม');
+    return true;
+  } catch (error) {
+    showFirebaseWriteError(error, 'เริ่มเกม');
+    return false;
+  }
+}
+
+async function markHostOnline() {
+  if (!room || !uid) return;
+  try {
+    await update(ref(db, path(`players/${uid}`)), { connected: true });
+    await onDisconnect(ref(db, path(`players/${uid}/connected`))).set(false);
+  } catch (error) {
+    console.error('markHostOnline', error);
+  }
+}
+
 function renderPlayers() {
   const list = entries();
   $('playerCount').textContent = `${list.length} คน`;
@@ -144,7 +183,7 @@ function attach() {
     render();
   });
   onValue(ref(db, path(`private/${uid}`)), s => { mine = s.val() || {}; render(); });
-  onValue(ref(db, path('hostSecret')), s => { truth = s.val() || {}; });
+  onValue(ref(db, path('hostSecret')), s => { truth = s.val() || {}; }, error => { console.error('hostSecret read', error); setConnection('Firebase Rules ยังไม่พร้อม'); });
   onValue(ref(db, path('spyVotes')), s => { allVotes = s.val() || {}; renderVoteProgress(); renderHostVote(); });
   onValue(ref(db, path('spyGuess')), async s => {
     const guess = s.val();
@@ -168,18 +207,28 @@ async function createRoom() {
   room = code;
   localStorage.setItem('spyfall_host_room', room);
   localStorage.setItem('spyfall_host_name', name);
-  await set(ref(db, path('hostUid')), uid);
-  await set(ref(db, path('public')), { gameType: GAME_TYPE, state: 'lobby', roundNumber: 0, duration: Number($('duration').value), createdAt: Date.now() });
-  await update(ref(db, path(`players/${uid}`)), { name, isHost: true, connected: true, joinedAt: Date.now(), assigned: false });
-  try { await onDisconnect(ref(db, path(`players/${uid}/connected`))).set(false); } catch {}
-  attach();
-  render();
+  try {
+    await set(ref(db, path('hostUid')), uid);
+    await set(ref(db, path('public')), { gameType: GAME_TYPE, state: 'lobby', roundNumber: 0, duration: Number($('duration').value), createdAt: Date.now() });
+    await update(ref(db, path(`players/${uid}`)), { name, isHost: true, connected: true, joinedAt: Date.now(), assigned: false });
+    try { await onDisconnect(ref(db, path(`players/${uid}/connected`))).set(false); } catch {}
+    attach();
+    render();
+    // Do not block room creation, but make the rules status explicit.
+    verifySpyfallRules();
+  } catch (error) {
+    showFirebaseWriteError(error, 'สร้างห้อง');
+  }
 }
 
 async function startRound() {
   const list = entries();
   if (list.length < 3) return alert('ต้องมีผู้เล่นอย่างน้อย 3 คน');
-  const location = pickLocation();
+  if (!(await verifySpyfallRules())) return;
+  $('startBtn').disabled = true;
+  $('startBtn').textContent = 'กำลังเริ่มรอบ…';
+  try {
+    const location = pickLocation();
   const { spyUid, assignments } = assignRound(list, location);
   const roundNumber = Number(pub.roundNumber || 0) + 1;
   const roundId = `r_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,6)}`;
@@ -193,10 +242,16 @@ async function startRound() {
   updates.spyGuess = null;
   updates.spyVotes = null;
   updates.public = { gameType: GAME_TYPE, state: 'playing', roundId, roundNumber, duration, endsAt: Date.now() + duration * 1000, startedAt: Date.now() };
-  await update(ref(db, path()), updates);
-  $('secretCard').classList.add('hidden');
-  $('revealBtn').textContent = '🔒 แตะเพื่อดูการ์ดของฉัน';
-  hostVote = '';
+    await update(ref(db, path()), updates);
+    $('secretCard').classList.add('hidden');
+    $('revealBtn').textContent = '🔒 แตะเพื่อดูการ์ดของฉัน';
+    hostVote = '';
+  } catch (error) {
+    showFirebaseWriteError(error, 'เริ่มรอบ');
+  } finally {
+    $('startBtn').textContent = 'เริ่มรอบ';
+    renderPlayers();
+  }
 }
 
 function fillSuspects() {
@@ -317,7 +372,13 @@ $('nextBtn').onclick = startRound;
     const saved = localStorage.getItem('spyfall_host_room');
     if (saved) {
       const snap = await get(ref(db, `rooms/${saved}/hostUid`));
-      if (snap.val() === uid) { room = saved; attach(); render(); }
+      if (snap.val() === uid) {
+        room = saved;
+        await markHostOnline();
+        attach();
+        render();
+        verifySpyfallRules();
+      }
     }
   } catch (error) {
     console.error(error);
